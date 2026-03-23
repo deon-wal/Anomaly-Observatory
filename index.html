@@ -3,277 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBSIDIAN // v13.0_FORENSIC</title>
+    <title>OBSIDIAN // v14.0_NEXUS</title>
     <style>
         :root {
-            --stellar-white: #e0e6ed;
-            --blood-red: #da0019;
-            --void: #050507;
-            --panel: rgba(10, 10, 12, 0.85);
-            --font-data: 'Courier New', monospace;
+            --cyan: #00e5ff;
+            --cyan-dim: rgba(0, 229, 255, 0.15);
+            --red: #ff2a2a;
+            --bg: #030508;
+            --panel: rgba(8, 12, 18, 0.85);
+            --text: #e2e8f0;
+            --font: 'SF Mono', 'Courier New', monospace;
         }
 
-        * { box-sizing: border-box; cursor: crosshair; }
+        * { box-sizing: border-box; }
         body { 
-            background: var(--void); color: var(--stellar-white); 
-            font-family: var(--font-data); margin: 0; overflow: hidden; height: 100vh;
-            text-transform: uppercase;
+            background: var(--bg); color: var(--text); 
+            font-family: var(--font); margin: 0; overflow: hidden; height: 100vh;
+            user-select: none;
         }
 
-        /* Procedural Static Overlay */
-        body::after {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 50% 50%, transparent 20%, rgba(0,0,0,0.8) 100%);
-            pointer-events: none; z-index: 99;
-        }
-
-        #viewport { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; filter: contrast(1.2) sepia(0.2) hue-rotate(-10deg); }
+        #viewport { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; cursor: grab; }
+        #viewport:active { cursor: grabbing; }
         .overlay { position: absolute; z-index: 10; pointer-events: none; }
         .interactive { pointer-events: auto; }
 
         header {
-            top: 0; left: 0; width: 100%; padding: 25px;
+            top: 0; left: 0; width: 100%; padding: 20px 30px;
             display: flex; justify-content: space-between; align-items: flex-start;
-            border-bottom: 1px solid rgba(218, 0, 25, 0.3);
-            background: linear-gradient(to bottom, #000, transparent);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            border-bottom: 1px solid var(--cyan-dim);
         }
 
-        .dont-panic {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 8vw; color: rgba(255,255,255,0.02); font-weight: 900;
-            z-index: 0; letter-spacing: 2vw; white-space: nowrap;
-        }
-
-        /* Forensic HUD */
-        #intel-hud {
-            top: 120px; left: 25px; width: 340px;
-            background: var(--panel); border: 1px solid var(--blood-red);
-            padding: 20px; display: none; backdrop-filter: blur(5px);
-            box-shadow: 0 0 20px rgba(218, 0, 25, 0.1);
-        }
+        .title-block { font-weight: 700; color: var(--cyan); letter-spacing: 2px; font-size: 1.1rem; }
+        .sub-block { font-size: 0.7rem; color: #8892b0; margin-top: 4px; letter-spacing: 1px; }
 
         #archive-panel {
-            top: 120px; right: 25px; bottom: 40px; width: 380px;
-            background: var(--panel); border: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; backdrop-filter: blur(5px);
+            top: 90px; right: 20px; bottom: 30px; width: 340px;
+            background: var(--panel); border: 1px solid var(--cyan-dim);
+            display: flex; flex-direction: column; backdrop-filter: blur(10px);
+            border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .waveform-container {
-            height: 60px; width: 100%; background: #000;
-            border: 1px solid rgba(218, 0, 25, 0.3); margin-top: 15px;
+        .panel-header {
+            padding: 15px; border-bottom: 1px solid var(--cyan-dim);
+            font-size: 0.8rem; color: var(--cyan); display: flex; justify-content: space-between;
         }
 
-        #feed { flex: 1; overflow-y: auto; padding: 10px; scrollbar-width: none; }
-        
+        #feed { flex: 1; overflow-y: auto; padding: 10px; }
+        #feed::-webkit-scrollbar { width: 4px; }
+        #feed::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
+
         .card {
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05);
-            padding: 15px; margin-bottom: 8px; transition: 0.2s;
+            background: rgba(255,255,255,0.02); border: 1px solid transparent;
+            padding: 12px; margin-bottom: 8px; cursor: pointer; border-radius: 3px;
+            transition: all 0.2s ease;
         }
-        .card:hover { border-color: var(--stellar-white); }
-        .card.active { border-left: 5px solid var(--blood-red); background: rgba(218, 0, 25, 0.05); }
+        .card:hover { border-color: var(--cyan-dim); background: rgba(0, 229, 255, 0.05); }
+        .card.active { border-left: 4px solid var(--cyan); background: var(--cyan-dim); }
+        .card.danger { border-left-color: var(--red); }
+        .card.danger.active { background: rgba(255, 42, 42, 0.1); border-color: var(--red); }
 
-        .btn-reset { 
-            bottom: 30px; left: 30px; background: none; border: 1px solid var(--stellar-white);
-            color: var(--stellar-white); padding: 10px 20px; font-family: var(--font-data);
-            transition: 0.3s;
+        .tooltip {
+            position: absolute; background: rgba(0,0,0,0.9); border: 1px solid var(--cyan);
+            padding: 10px; font-size: 0.75rem; color: var(--text); pointer-events: none;
+            display: none; z-index: 100; border-radius: 3px; box-shadow: 0 0 15px var(--cyan-dim);
         }
-        .btn-reset:hover { background: var(--stellar-white); color: #000; }
+
+        .hud-stats { bottom: 20px; left: 20px; font-size: 0.7rem; color: #8892b0; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-    <div class="dont-panic">DON'T PANIC</div>
-    <div id="viewport" class="overlay"><canvas id="map"></canvas></div>
+    <canvas id="viewport" class="interactive"></canvas>
+    <div id="hover-tooltip" class="tooltip"></div>
 
     <header class="overlay">
         <div>
-            <div style="color: var(--blood-red); font-weight: 900; letter-spacing: 4px;">PLANETARY_LACERATION_MONITOR // V.13</div>
-            <div style="font-size: 0.7rem; margin-top: 5px; opacity: 0.7;">
-                TARGET: EARTH [MOSTLY HARMLESS] // DETECTED ANOMALIES: <span id="asset-count">0</span>
-            </div>
+            <div class="title-block">NEXUS // GEODYNAMIC MONITOR</div>
+            <div class="sub-block">OBSERVER_ZERO: BRIDGEWATER [ACTIVE]</div>
         </div>
         <div style="text-align: right;">
-            <div id="clock" style="font-size: 1.2rem; color: var(--stellar-white); letter-spacing: 2px;">00:00:00</div>
-            <div style="font-size: 0.6rem; color: var(--blood-red); margin-top: 4px;">SIC MUNDUS CREATUS EST</div>
+            <div id="clock" style="font-size: 1.2rem; color: var(--text);">00:00:00</div>
+            <div class="sub-block">USGS_TELEMETRY_LINK: SECURE</div>
         </div>
     </header>
 
-    <div id="intel-hud" class="overlay interactive">
-        <div style="font-size: 0.6rem; color: rgba(255,255,255,0.5); border-bottom: 1px solid var(--blood-red); padding-bottom: 5px;">FORENSIC_ANALYSIS_ACTIVE</div>
-        <h2 id="int-title" style="font-size: 0.9rem; margin: 15px 0 10px; color: var(--blood-red);">LOCATION</h2>
-        <div style="font-size: 0.75rem; line-height: 2;">
-            KINETIC YIELD: <span id="int-mag" style="color: var(--blood-red); font-weight: bold;">0.0</span><br>
-            ABYSSAL CORTEX DEPTH: <span id="int-depth">0 KM</span><br>
-            TEMPORAL RESONANCE: <span id="int-time">--</span><br>
-            DIST TO OBSERVER_ZERO: <span id="int-dist">--</span>
-        </div>
-        <div class="waveform-container"><canvas id="waveform"></canvas></div>
-        <button onclick="closeIntel()" style="margin-top: 15px; width: 100%; background: transparent; border: 1px solid var(--blood-red); color: var(--blood-red); padding: 8px; font-family: var(--font-data);">DISENGAGE</button>
-    </div>
-
     <div id="archive-panel" class="overlay interactive">
-        <div style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <div style="font-size: 0.6rem; margin-bottom: 5px; color: var(--blood-red);">DETERMINISTIC EVENT LOG</div>
-            <input type="text" id="search" placeholder="ISOLATE VARIABLE..." style="width:100%; background:transparent; border:1px solid rgba(255,255,255,0.2); color:var(--stellar-white); padding:8px; font-family: var(--font-data);">
+        <div class="panel-header">
+            <span>SEISMIC LOG (24H)</span>
+            <span id="event-count" style="color: var(--text);">0 EVENTS</span>
         </div>
         <div id="feed"></div>
     </div>
 
-    <button class="overlay interactive btn-reset" onclick="resetView()">RE-ALIGN MACRO PERSPECTIVE</button>
+    <div class="overlay hud-stats">
+        SYSTEM: NOMINAL<br>
+        PROJECTION: ORTHOGRAPHIC<br>
+        ZOOM LVL: <span id="zoom-readout">25.0</span>x
+    </div>
 
     <script>
-        const canvas = document.getElementById("map");
+        const canvas = document.getElementById("viewport");
         const ctx = canvas.getContext("2d");
-        const waveCanvas = document.getElementById("waveform");
-        const wCtx = waveCanvas.getContext("2d");
+        const tooltip = document.getElementById("hover-tooltip");
 
         let events = [];
+        let hoveredEvent = null;
         let selectedId = null;
-        let cam = { x: 147.24, y: -42.74, z: 30, tx: 147.24, ty: -42.74, tz: 30 }; // Defaulted near Bridgewater
+        
+        // Camera & Interaction State
+        let cam = { x: 138, y: -28, z: 22, tx: 138, ty: -28, tz: 22 };
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+        let mousePos = { x: 0, y: 0 };
 
-        // Ground Truth Observer
-        const observerZero = { name: "OBSERVER_ZERO (BRIDGEWATER)", lat: -42.738, lon: 147.245 };
+        const observerZero = { lat: -42.738, lon: 147.245 }; // Bridgewater
         const au_outline = [[113,-21],[114,-25],[113,-35],[115,-35],[120,-34],[125,-32],[130,-31],[135,-34],[138,-35],[140,-37],[145,-39],[150,-37],[153,-28],[150,-20],[145,-15],[142,-10],[135,-12],[130,-11],[125,-14],[120,-18],[113,-21]];
         const tas_outline = [[144.6,-40.7],[148.3,-40.8],[148.0,-43.6],[146.0,-43.6],[144.6,-40.7]];
 
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; const dLat = (lat2-lat1) * Math.PI / 180; const dLon = (lon2-lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * R).toFixed(1);
-        }
+        // --- Interaction Listeners ---
+        canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; });
+        canvas.addEventListener('mouseup', () => isDragging = false);
+        canvas.addEventListener('mouseleave', () => { isDragging = false; tooltip.style.display = 'none'; });
+        
+        canvas.addEventListener('mousemove', e => {
+            mousePos = { x: e.clientX, y: e.clientY };
+            if (isDragging) {
+                const dx = e.clientX - lastMouse.x;
+                const dy = e.clientY - lastMouse.y;
+                cam.tx -= dx / cam.z;
+                cam.ty += dy / cam.z;
+                lastMouse = { x: e.clientX, y: e.clientY };
+            }
+            checkHover();
+        });
 
+        canvas.addEventListener('wheel', e => {
+            cam.tz *= (e.deltaY > 0 ? 0.9 : 1.1);
+            cam.tz = Math.max(5, Math.min(cam.tz, 150)); // Clamp zoom
+            document.getElementById('zoom-readout').innerText = cam.tz.toFixed(1);
+        });
+
+        canvas.addEventListener('click', () => {
+            if (hoveredEvent && !isDragging) selectEvent(hoveredEvent.id);
+            else if (!isDragging) { selectedId = null; renderFeed(); }
+        });
+
+        // --- Data Logic ---
         async function sync() {
             try {
                 const res = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson");
                 const data = await res.json();
                 events = data.features
-                    .filter(f => f.geometry.coordinates[0] > 110 && f.geometry.coordinates[0] < 155 && f.geometry.coordinates[1] > -45 && f.geometry.coordinates[1] < -10)
-                    .map(f => {
-                        const lat = f.geometry.coordinates[1], lon = f.geometry.coordinates[0];
-                        return {
-                            id: f.id, title: f.properties.place, mag: f.properties.mag,
-                            depth: f.geometry.coordinates[2], time: f.properties.time,
-                            lat, lon, dist: getDistance(lat, lon, observerZero.lat, observerZero.lon)
-                        };
-                    });
-                document.getElementById('asset-count').innerText = events.length;
+                    .filter(f => f.geometry.coordinates[0] > 105 && f.geometry.coordinates[0] < 160 && f.geometry.coordinates[1] > -50 && f.geometry.coordinates[1] < -5)
+                    .map(f => ({
+                        id: f.id, title: f.properties.place, mag: f.properties.mag,
+                        depth: f.geometry.coordinates[2], time: f.properties.time,
+                        lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0]
+                    }));
+                document.getElementById('event-count').innerText = `${events.length} EVENTS`;
                 renderFeed();
-            } catch(e) { console.error("LINK SEVERED"); }
+            } catch(e) { console.error("API Error"); }
         }
 
         function renderFeed() {
             const feed = document.getElementById('feed');
-            feed.innerHTML = events.map(e => `
-                <div class="card ${selectedId === e.id ? 'active' : ''}" onclick="focusEvent('${e.id}')">
-                    <div style="font-size:0.6rem; color:rgba(255,255,255,0.4); margin-bottom:5px;">ECHO_ID: ${e.id}</div>
-                    <div style="font-weight:bold; font-size:0.8rem; color:${e.mag > 4 ? 'var(--blood-red)' : 'var(--stellar-white)'}">${e.title}</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:0.7rem;">
-                        <span>YIELD: ${e.mag.toFixed(1)}</span>
-                        <span style="opacity:0.5;">- ${e.dist}KM FROM OBS_0</span>
+            feed.innerHTML = events.map(e => {
+                const isDanger = e.mag >= 4.0;
+                const isActive = selectedId === e.id;
+                return `
+                <div class="card ${isActive ? 'active' : ''} ${isDanger ? 'danger' : ''}" onclick="selectEvent('${e.id}')">
+                    <div style="font-size:0.8rem; font-weight:bold; color: ${isDanger ? 'var(--red)' : 'var(--text)'}">${e.title}</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.7rem; color:#8892b0;">
+                        <span>M ${e.mag.toFixed(1)} | ${e.depth.toFixed(0)}km</span>
+                        <span>${new Date(e.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
-        function focusEvent(id) {
-            selectedId = id; const e = events.find(x => x.id === id);
-            cam.tx = e.lon; cam.ty = e.lat; cam.tz = 90;
-            
-            document.getElementById('intel-hud').style.display = 'block';
-            document.getElementById('int-title').innerText = e.title;
-            document.getElementById('int-mag').innerText = e.mag.toFixed(2);
-            document.getElementById('int-depth').innerText = e.depth.toFixed(1) + " KM DOWN";
-            document.getElementById('int-time').innerText = "T-" + Math.floor((Date.now() - e.time)/60000) + " MINUTES";
-            document.getElementById('int-dist').innerText = e.dist + " KM";
+        function selectEvent(id) {
+            selectedId = id;
+            const e = events.find(x => x.id === id);
+            cam.tx = e.lon; cam.ty = e.lat;
             renderFeed();
         }
 
-        function closeIntel() { document.getElementById('intel-hud').style.display = 'none'; selectedId = null; resetView(); }
-        function resetView() { cam.tx = 138; cam.ty = -28; cam.tz = 20; renderFeed(); }
+        // Project lat/lon to screen coordinates to check mouse hover
+        function checkHover() {
+            hoveredEvent = null;
+            let found = false;
+            
+            // Transform matrix logic matching the canvas context
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
 
-        let waveOffset = 0;
-        function drawWaveform() {
-            wCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
-            wCtx.beginPath(); wCtx.strokeStyle = selectedId ? "var(--blood-red)" : "rgba(255,255,255,0.2)"; wCtx.lineWidth = 1;
-            const e = events.find(x => x.id === selectedId); const amplitude = e ? Math.abs(e.depth) * 0.5 : 2;
-            for(let x=0; x<waveCanvas.width; x++) {
-                const y = (waveCanvas.height/2) + (Math.sin(x*0.1 + waveOffset) * amplitude * (Math.random() > 0.8 ? 2 : 0.5));
-                if(x===0) wCtx.moveTo(x,y); else wCtx.lineTo(x,y);
-            }
-            wCtx.stroke(); waveOffset += 0.3; requestAnimationFrame(drawWaveform);
-        }
+            events.forEach(e => {
+                const screenX = centerX + (e.lon - cam.x) * cam.z;
+                const screenY = centerY - (e.lat - cam.y) * cam.z; // - because Y is inverted
+                const dist = Math.hypot(mousePos.x - screenX, mousePos.y - screenY);
+                
+                if (dist < 10) {
+                    hoveredEvent = e;
+                    found = true;
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (mousePos.x + 15) + 'px';
+                    tooltip.style.top = (mousePos.y + 15) + 'px';
+                    
+                    const color = e.mag >= 4.0 ? 'var(--red)' : 'var(--cyan)';
+                    tooltip.innerHTML = `
+                        <strong style="color:${color}; font-size:0.85rem">${e.title}</strong><br>
+                        <span style="color:#8892b0">MAG:</span> ${e.mag.toFixed(1)}<br>
+                        <span style="color:#8892b0">DEPTH:</span> ${e.depth.toFixed(1)} km<br>
+                        <span style="color:#8892b0">COORD:</span> ${e.lat.toFixed(2)}, ${e.lon.toFixed(2)}
+                    `;
+                }
+            });
 
-        // Generate static procedural noise for canvas background
-        const noiseCanvas = document.createElement('canvas');
-        const nCtx = noiseCanvas.getContext('2d');
-        function renderNoise() {
-            noiseCanvas.width = canvas.width; noiseCanvas.height = canvas.height;
-            const idata = nCtx.createImageData(noiseCanvas.width, noiseCanvas.height);
-            const buffer = new Uint32Array(idata.data.buffer);
-            for(let i=0; i<buffer.length; i++) buffer[i] = Math.random() < 0.05 ? 0xff333333 : 0xff000000;
-            nCtx.putImageData(idata, 0, 0);
+            if (!found) tooltip.style.display = 'none';
+            canvas.style.cursor = found ? 'crosshair' : (isDragging ? 'grabbing' : 'grab');
         }
 
         function draw() {
-            cam.x += (cam.tx - cam.x) * 0.03; cam.y += (cam.ty - cam.y) * 0.03; cam.z += (cam.tz - cam.z) * 0.03;
+            // Smooth Camera Interpolation
+            cam.x += (cam.tx - cam.x) * 0.1;
+            cam.y += (cam.ty - cam.y) * 0.1;
+            cam.z += (cam.tz - cam.z) * 0.1;
 
             ctx.clearRect(0,0,canvas.width, canvas.height);
-            ctx.globalAlpha = 0.1; ctx.drawImage(noiseCanvas, 0, 0); ctx.globalAlpha = 1.0;
 
+            // Draw Graticule (Lat/Lon Grid)
             ctx.save();
-            ctx.translate(canvas.width/2, canvas.height/2); ctx.scale(cam.z, -cam.z); ctx.translate(-cam.x, -cam.y);
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.scale(cam.z, -cam.z);
+            ctx.translate(-cam.x, -cam.y);
 
-            // Triquetra/Temporal rings background pattern
-            ctx.strokeStyle = "rgba(255,255,255,0.02)"; ctx.lineWidth = 2/cam.z;
-            for(let r=5; r<50; r+=5) { ctx.beginPath(); ctx.arc(133, -28, r, 0, Math.PI*2); ctx.stroke(); }
+            ctx.strokeStyle = "rgba(0, 229, 255, 0.05)";
+            ctx.lineWidth = 1 / cam.z;
+            for(let i = 100; i <= 160; i += 5) { ctx.beginPath(); ctx.moveTo(i, -50); ctx.lineTo(i, 0); ctx.stroke(); }
+            for(let i = -50; i <= 0; i += 5) { ctx.beginPath(); ctx.moveTo(100, i); ctx.lineTo(160, i); ctx.stroke(); }
 
-            // Geometry
-            ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.lineWidth = 1.5/cam.z;
+            // Draw Landmasses
+            ctx.strokeStyle = "rgba(0, 229, 255, 0.4)";
+            ctx.fillStyle = "rgba(0, 229, 255, 0.02)";
+            ctx.lineWidth = 1.5 / cam.z;
             [au_outline, tas_outline].forEach(shape => {
-                ctx.beginPath(); shape.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1])); ctx.stroke();
+                ctx.beginPath();
+                shape.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+                ctx.stroke(); ctx.fill();
             });
 
-            // Observer Zero (Bridgewater)
-            ctx.fillStyle = "var(--stellar-white)";
-            ctx.beginPath(); ctx.arc(observerZero.lon, observerZero.lat, 3/cam.z, 0, Math.PI*2); ctx.fill();
-            ctx.font = `${8/cam.z}px monospace`; ctx.scale(1, -1);
-            ctx.fillText("OBS_0", observerZero.lon + 0.5, -observerZero.lat); ctx.scale(1, -1);
-
-            // Forensic Blood-Splatter Events
+            // Draw Events
             events.forEach(e => {
+                const isHovered = hoveredEvent && hoveredEvent.id === e.id;
                 const isSelected = selectedId === e.id;
-                const size = (e.mag) / (cam.z * 0.05);
-                
-                if(isSelected) {
-                    ctx.strokeStyle = "var(--blood-red)"; ctx.lineWidth = 1/cam.z;
-                    ctx.beginPath(); ctx.moveTo(observerZero.lon, observerZero.lat); ctx.lineTo(e.lon, e.lat); ctx.stroke();
-                    ctx.beginPath(); ctx.arc(e.lon, e.lat, (Math.sin(Date.now()/50)+2)*size, 0, Math.PI*2); ctx.stroke();
+                const isDanger = e.mag >= 4.0;
+                const color = isDanger ? "var(--red)" : "var(--cyan)";
+                const radius = Math.max((e.mag) / (cam.z * 0.08), 2 / cam.z);
+
+                ctx.fillStyle = color;
+                ctx.strokeStyle = color;
+
+                // Ping animation for selected or hovered
+                if (isSelected || isHovered) {
+                    const ping = (Math.sin(Date.now() / 150) + 1.5) * radius * 2;
+                    ctx.lineWidth = 2 / cam.z;
+                    ctx.beginPath(); ctx.arc(e.lon, e.lat, ping, 0, Math.PI * 2); ctx.stroke();
                 }
 
-                ctx.fillStyle = e.mag > 3.5 ? "var(--blood-red)" : "rgba(255,255,255,0.5)";
-                
-                // Dexter-style "laceration" markers instead of dots
-                ctx.beginPath();
-                ctx.moveTo(e.lon, e.lat - size); ctx.lineTo(e.lon + size*0.2, e.lat);
-                ctx.lineTo(e.lon, e.lat + size); ctx.lineTo(e.lon - size*0.2, e.lat);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(e.lon, e.lat, radius, 0, Math.PI * 2); ctx.fill();
             });
 
-            ctx.restore(); requestAnimationFrame(draw);
+            ctx.restore();
+            requestAnimationFrame(draw);
         }
 
-        window.addEventListener('resize', () => { 
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
-            waveCanvas.width = waveCanvas.offsetWidth; waveCanvas.height = waveCanvas.offsetHeight;
-            renderNoise();
-        });
-
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
         canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        waveCanvas.width = waveCanvas.offsetWidth; waveCanvas.height = waveCanvas.offsetHeight;
-        renderNoise();
 
         setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
-        sync(); draw(); drawWaveform();
+        sync(); draw();
     </script>
 </body>
 </html>
