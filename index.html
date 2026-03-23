@@ -2,89 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBSIDIAN // v8.0_KINETIC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBSIDIAN // v9.0_KINETIC</title>
     <style>
         :root {
             --accent: #00ffd5;
+            --accent-glow: rgba(0, 255, 213, 0.4);
             --warning: #ffb800;
             --danger: #ff3e3e;
-            --bg: #030812;
-            --glass: rgba(8, 15, 30, 0.98);
-            --border: rgba(0, 255, 213, 0.25);
-            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bg: #02060e;
+            --glass: rgba(8, 15, 30, 0.9);
+            --border: rgba(0, 255, 213, 0.2);
+            --font-ui: 'Inter', system-ui, sans-serif;
             --font-data: 'JetBrains Mono', 'Fira Code', monospace;
         }
 
-        * { box-sizing: border-box; cursor: crosshair; }
+        /* 1. Reset & Global Styles */
+        * { box-sizing: border-box; cursor: crosshair; outline: none; }
         body { 
             background: var(--bg); color: #f0f4f8; 
-            font-family: var(--font-ui); margin: 0; overflow: hidden; height: 100vh;
+            font-family: var(--font-ui); margin: 0; 
+            overflow: hidden; height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        #viewport { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
-        canvas { display: block; }
+        /* 2. Scanline Effect Overlay */
+        body::before {
+            content: " "; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 3px, 3px 100%; z-index: 100; pointer-events: none;
+        }
+
+        #viewport { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; transition: opacity 1s; }
+        canvas { display: block; touch-action: none; }
 
         .overlay { position: absolute; z-index: 10; pointer-events: none; }
         .interactive { pointer-events: auto; }
 
-        /* UI Enhancements */
+        /* 3. Header Improvements */
         header {
-            top: 0; left: 0; width: 100%; padding: 30px;
-            display: flex; justify-content: space-between; align-items: center;
-            background: linear-gradient(to bottom, rgba(3,8,18,1), transparent);
+            top: 0; left: 0; width: 100%; padding: 25px 40px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            background: linear-gradient(to bottom, rgba(2, 6, 14, 1), transparent);
         }
         .branding h1 { 
-            margin: 0; font-size: 1.6rem; font-family: var(--font-data); 
-            color: var(--accent); letter-spacing: 5px; font-weight: 800;
+            margin: 0; font-size: 1.4rem; font-family: var(--font-data); 
+            color: var(--accent); letter-spacing: 6px; font-weight: 900;
+            text-shadow: 0 0 10px var(--accent-glow);
         }
 
+        /* 4. Panel Refinement */
         #archive-panel {
-            top: 110px; right: 30px; bottom: 40px;
-            width: 420px; background: var(--glass);
+            top: 100px; right: 25px; bottom: 30px;
+            width: 380px; background: var(--glass);
             border: 1px solid var(--border);
             display: flex; flex-direction: column;
-            border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            border-radius: 4px; backdrop-filter: blur(12px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .panel-header { padding: 25px; border-bottom: 1px solid var(--border); }
+        .panel-header { padding: 20px; border-bottom: 1px solid var(--border); }
         .search-bar {
-            width: 100%; background: #000; border: 1px solid var(--border);
-            color: var(--accent); padding: 15px; font-family: var(--font-data); 
-            font-size: 1rem; outline: none; border-radius: 4px;
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            color: var(--accent); padding: 12px; font-family: var(--font-data); 
+            font-size: 0.85rem; border-radius: 2px;
+            transition: all 0.2s;
         }
+        .search-bar:focus { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
 
-        #feed { flex: 1; overflow-y: auto; padding: 20px; scrollbar-width: none; }
+        /* 5. Feed & Scrollbar Styling */
+        #feed { 
+            flex: 1; overflow-y: scroll; padding: 15px; 
+            scrollbar-width: thin; scrollbar-color: var(--accent) transparent;
+        }
+        #feed::-webkit-scrollbar { width: 4px; }
+        #feed::-webkit-scrollbar-thumb { background: var(--accent); }
 
-        /* Card Usability Update */
         .card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.07);
-            padding: 20px; margin-bottom: 15px;
-            transition: 0.3s cubic-bezier(0.19, 1, 0.22, 1);
-            border-radius: 6px; position: relative;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
+            padding: 16px; margin-bottom: 12px; border-radius: 4px;
+            transition: 0.2s; cursor: pointer;
         }
         .card:hover { 
-            background: rgba(0, 255, 213, 0.1); 
-            border-color: var(--accent);
-            transform: scale(1.02);
+            background: rgba(0, 255, 213, 0.08); border-color: var(--accent);
+            transform: translateX(-5px);
         }
-        .card.high-mag { border-left: 6px solid var(--danger); background: rgba(255,62,62,0.03); }
-        .card h4 { margin: 0 0 10px; font-size: 1.1rem; color: #fff; line-height: 1.4; }
+        .card.high-mag { border-left: 4px solid var(--danger); }
+        .card h4 { margin: 0 0 8px; font-size: 0.95rem; color: #fff; font-weight: 500; }
         .card .meta { 
             display: flex; justify-content: space-between; 
-            font-family: var(--font-data); font-size: 0.85rem; color: var(--accent);
+            font-family: var(--font-data); font-size: 0.75rem; color: var(--accent);
+            opacity: 0.8;
         }
 
-        .controls { bottom: 30px; left: 30px; display: flex; gap: 15px; }
+        /* 6. Controls & HUD */
+        .controls { bottom: 30px; left: 30px; display: flex; gap: 10px; }
         button {
-            background: var(--glass); border: 1px solid var(--border); color: var(--accent);
-            padding: 15px 25px; font-family: var(--font-data); font-size: 0.9rem;
-            text-transform: uppercase; border-radius: 4px; transition: 0.2s;
+            background: rgba(0, 255, 213, 0.05); border: 1px solid var(--border); color: var(--accent);
+            padding: 12px 20px; font-family: var(--font-data); font-size: 0.75rem;
+            letter-spacing: 1px; border-radius: 2px; transition: 0.3s;
         }
-        button:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+        button:hover { background: var(--accent); color: #000; font-weight: bold; }
 
-        #coords { bottom: 100px; left: 35px; font-family: var(--font-data); font-size: 0.9rem; color: var(--accent); background: rgba(0,0,0,0.5); padding: 5px 10px; }
+        #coords { 
+            bottom: 85px; left: 30px; font-family: var(--font-data); 
+            font-size: 0.8rem; color: var(--accent); opacity: 0.7; 
+        }
+
+        /* Loading Spinner */
+        .loading-shimmer {
+            height: 2px; width: 100%; position: absolute; bottom: 0; left: 0;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            background-size: 200% 100%; animation: shimmer 2s infinite linear;
+            display: none;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     </style>
 </head>
 <body>
@@ -93,22 +127,26 @@
 
     <header class="overlay">
         <div class="branding">
-            <h1>OBSIDIAN_KINETIC</h1>
-            <div id="status" style="font-family: var(--font-data); font-size: 0.8rem; color: var(--accent);">LATENCY: 24ms // SENSORS: ONLINE</div>
+            <h1>OBSIDIAN_KINETIC // v9.0</h1>
+            <div id="status" style="font-family: var(--font-data); font-size: 0.75rem; color: var(--accent); margin-top: 5px;">
+                SYSTEM: STANDBY // <span id="event-count">0</span> DETECTIONS
+            </div>
         </div>
         <div class="interactive" style="text-align: right;">
-            <div id="clock" style="font-size: 1.8rem; font-family: var(--font-data); color: var(--accent);">00:00:00</div>
+            <div id="clock" style="font-size: 1.4rem; font-family: var(--font-data); color: var(--accent);">00:00:00</div>
+            <div id="sync-timer" style="font-size: 0.6rem; color: var(--border); margin-top: 4px;">NEXT REFRESH: 60s</div>
         </div>
     </header>
 
     <div id="archive-panel" class="overlay interactive">
         <div class="panel-header">
-            <input type="text" id="search" class="search-bar" placeholder="FILTER BY REGION...">
+            <input type="text" id="search" class="search-bar" placeholder="SEARCH COORDINATES / REGIONS...">
+            <div id="loader" class="loading-shimmer"></div>
         </div>
         <div id="feed"></div>
     </div>
 
-    <div id="coords" class="overlay">LAT: 00.00 // LON: 00.00</div>
+    <div id="coords" class="overlay">LAT: 00.00 // LON: 00.00 // ZOOM: 1.0x</div>
 
     <div class="controls overlay interactive">
         <button onclick="resetCamera()">Reset View</button>
@@ -117,22 +155,38 @@
 
     <script>
         const canvas = document.getElementById("map");
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { alpha: false }); // Perf: Disable alpha for background
         let events = [];
         let filterText = "";
+        let nextSync = 60;
         
         // CAMERA STATE
         let cam = { x: 0, y: 0, z: 1, tx: 0, ty: 0, tz: 1 };
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
 
+        // Simplified geo data with slightly more "nodes" for visual flavor
         const continents = [
-            [[-20,15],[-10,20],[10,25],[30,25],[45,10],[50,-20],[30,-35],[15,-30],[10,-10],[-10,-5]], 
+            [[ -20,15],[-10,20],[10,25],[30,25],[45,10],[50,-20],[30,-35],[15,-30],[10,-10],[-10,-5]],
             [[-100,50],[-60,50],[-60,20],[-80,10],[-100,20],[-120,30],[-120,50]],
             [[-80,10],[-40,10],[-40,-40],[-60,-55],[-80,-10]],
             [[0,50],[40,60],[140,60],[140,20],[80,10],[40,20]],
             [[110,-10],[150,-10],[150,-40],[110,-40]]
         ];
 
+        // 7. High-DPI Canvas Scaling
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+            resetCamera();
+        }
+
         async function sync() {
+            document.getElementById('loader').style.display = 'block';
             try {
                 const res = await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson");
                 const data = await res.json();
@@ -140,8 +194,23 @@
                     id: f.id, title: f.properties.place, mag: f.properties.mag,
                     time: f.properties.time, lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0]
                 })).sort((a,b) => b.time - a.time);
+                
+                document.getElementById('event-count').innerText = events.length;
                 renderFeed();
-            } catch(e) { console.error("Sync Failed"); }
+                nextSync = 60;
+            } catch(e) { 
+                console.error("Sync Failed"); 
+                document.getElementById('status').innerText = "STATUS: SYNC_ERROR // RETRYING...";
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        }
+
+        // 8. Relative Time Calculation
+        function timeAgo(ms) {
+            const sec = Math.floor((Date.now() - ms) / 1000);
+            if (sec < 60) return `${sec}S AGO`;
+            return `${Math.floor(sec/60)}M AGO`;
         }
 
         function renderFeed() {
@@ -151,99 +220,127 @@
                 <div class="card ${e.mag > 4.5 ? 'high-mag' : ''}" onclick="flyTo(${e.lat}, ${e.lon})">
                     <h4>${e.title}</h4>
                     <div class="meta">
-                        <span>MAGNITUDE: ${e.mag.toFixed(1)}</span>
-                        <span>${new Date(e.time).toLocaleTimeString()}</span>
+                        <span>MAG ${e.mag.toFixed(1)}</span>
+                        <span>${timeAgo(e.time)}</span>
                     </div>
                 </div>
             `).join('');
         }
 
         function flyTo(lat, lon) {
-            cam.tx = (lon + 180) * (canvas.width / 360);
-            cam.ty = (90 - lat) * (canvas.height / 180);
-            cam.tz = 4; // Zoom Level
+            cam.tx = (lon + 180) * (window.innerWidth / 360);
+            cam.ty = (90 - lat) * (window.innerHeight / 180);
+            cam.tz = 3.5;
         }
 
         function resetCamera() {
-            cam.tx = canvas.width / 2;
-            cam.ty = canvas.height / 2;
-            cam.tz = 1;
+            cam.tx = window.innerWidth / 2;
+            cam.ty = window.innerHeight / 2;
+            cam.tz = 1.2;
         }
 
+        // 9. Improved Drawing Loop
         function draw() {
-            // Easing / Smoothing logic
-            cam.x += (cam.tx - cam.x) * 0.08;
-            cam.y += (cam.ty - cam.y) * 0.08;
-            cam.z += (cam.tz - cam.z) * 0.08;
+            // Smooth Interpolation
+            cam.x += (cam.tx - cam.x) * 0.1;
+            cam.y += (cam.ty - cam.y) * 0.1;
+            cam.z += (cam.tz - cam.z) * 0.1;
 
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset
-            ctx.fillStyle = "#030812";
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = "#02060e";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Apply Camera Transform
-            ctx.translate(canvas.width/2, canvas.height/2);
+            // World Transform
+            ctx.translate(window.innerWidth/2, window.innerHeight/2);
             ctx.scale(cam.z, cam.z);
             ctx.translate(-cam.x, -cam.y);
 
-            // Grid
-            ctx.strokeStyle = "rgba(0, 255, 213, 0.05)";
+            // Subtle Grid
+            ctx.strokeStyle = "rgba(0, 255, 213, 0.03)";
+            ctx.lineWidth = 1/cam.z;
             for(let i=-2000; i<4000; i+=100) {
                 ctx.beginPath(); ctx.moveTo(i,-2000); ctx.lineTo(i,4000); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(-2000,i); ctx.lineTo(4000,i); ctx.stroke();
             }
 
             // Continents
-            ctx.fillStyle = "rgba(0, 255, 213, 0.04)";
-            ctx.strokeStyle = "rgba(0, 255, 213, 0.15)";
+            ctx.fillStyle = "rgba(0, 255, 213, 0.03)";
+            ctx.strokeStyle = "rgba(0, 255, 213, 0.12)";
             continents.forEach(poly => {
                 ctx.beginPath();
                 poly.forEach((pt, i) => {
-                    const x = (pt[0] + 180) * (canvas.width / 360);
-                    const y = (90 - pt[1]) * (canvas.height / 180);
+                    const x = (pt[0] + 180) * (window.innerWidth / 360);
+                    const y = (90 - pt[1]) * (window.innerHeight / 180);
                     if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 });
                 ctx.closePath(); ctx.fill(); ctx.stroke();
             });
 
-            // Nodes
+            // Seismic Nodes
             events.forEach(e => {
-                const x = (e.lon + 180) * (canvas.width / 360);
-                const y = (90 - e.lat) * (canvas.height / 180);
-                const size = (2 + e.mag * 3) / (cam.z * 0.5); // Inverse scale so dots don't get huge
+                const x = (e.lon + 180) * (window.innerWidth / 360);
+                const y = (90 - e.lat) * (window.innerHeight / 180);
+                const baseSize = (1.5 + e.mag * 2);
+                const size = baseSize / (cam.z * 0.6); 
+                
+                // Pulse Animation
+                const pulse = Math.sin(Date.now()/300) * 2;
                 
                 ctx.beginPath();
                 ctx.arc(x, y, size, 0, Math.PI*2);
-                ctx.fillStyle = e.mag > 4.5 ? `rgba(255, 62, 62, 0.8)` : `rgba(0, 255, 213, 0.8)`;
+                ctx.fillStyle = e.mag > 4.5 ? `rgba(255, 62, 62, 0.8)` : `rgba(0, 255, 213, 0.7)`;
                 ctx.fill();
 
                 if(e.mag > 4.5) {
                     ctx.beginPath();
-                    ctx.arc(x, y, size * (1.5 + Math.sin(Date.now()/200)), 0, Math.PI*2);
+                    ctx.arc(x, y, size + Math.abs(pulse), 0, Math.PI*2);
                     ctx.strokeStyle = "rgba(255, 62, 62, 0.3)";
                     ctx.stroke();
                 }
             });
 
+            // 10. Mouse Interaction Logic (HUD)
+            document.getElementById('coords').innerText = `LAT: ${(90 - cam.y / (window.innerHeight/180)).toFixed(2)} // LON: ${(cam.x / (window.innerWidth/360) - 180).toFixed(2)} // ZOOM: ${cam.z.toFixed(1)}X`;
+
             requestAnimationFrame(draw);
         }
 
-        window.addEventListener('resize', () => { 
-            canvas.width = window.innerWidth; 
-            canvas.height = window.innerHeight; 
-            resetCamera();
+        // 11. Event Listeners (Interactive Controls)
+        window.addEventListener('wheel', (e) => {
+            cam.tz = Math.max(0.5, Math.min(8, cam.tz - e.deltaY * 0.005));
+        }, {passive: true});
+
+        canvas.addEventListener('mousedown', (e) => { 
+            isDragging = true; 
+            lastMouse = { x: e.clientX, y: e.clientY };
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if(!isDragging) return;
+            const dx = (e.clientX - lastMouse.x) / cam.z;
+            const dy = (e.clientY - lastMouse.y) / cam.z;
+            cam.tx -= dx;
+            cam.ty -= dy;
+            cam.x -= dx; // Immediate feedback
+            cam.y -= dy;
+            lastMouse = { x: e.clientX, y: e.clientY };
         });
 
+        window.addEventListener('resize', setupCanvas);
         document.getElementById('search').addEventListener('input', (e) => { 
             filterText = e.target.value; 
             renderFeed(); 
         });
 
-        // INIT
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        resetCamera();
-        cam.x = cam.tx; cam.y = cam.ty; // Start at center
-        setInterval(() => document.getElementById('clock').innerText = new Date().toLocaleTimeString(), 1000);
-        setInterval(sync, 60000);
+        // 12. Init Systems
+        setupCanvas();
+        setInterval(() => {
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+            nextSync--;
+            if(nextSync <= 0) sync();
+            document.getElementById('sync-timer').innerText = `NEXT REFRESH: ${nextSync}S`;
+        }, 1000);
+        
         sync(); draw();
     </script>
 </body>
